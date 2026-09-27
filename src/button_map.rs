@@ -98,6 +98,23 @@ impl ButtonMap {
         }
     }
 
+    /// Converts an EncoderName back to a raw MIDI CC address.
+    pub fn get_encoder_address(&self, name: EncoderName) -> Option<u8> {
+        match name {
+            EncoderName::Tempo => Some(14),
+            EncoderName::Swing => Some(15),
+            EncoderName::Track1 => Some(71),
+            EncoderName::Track2 => Some(72),
+            EncoderName::Track3 => Some(73),
+            EncoderName::Track4 => Some(74),
+            EncoderName::Track5 => Some(75),
+            EncoderName::Track6 => Some(76),
+            EncoderName::Track7 => Some(77),
+            EncoderName::Track8 => Some(78),
+            EncoderName::Master => Some(79),
+        }
+    }
+
     /// Returns a list of supported Control Addresses for initialization resets
     pub fn get_control_addresses(&self) -> impl Iterator<Item = u8> {
         [3, 9, 118, 119].into_iter()

@@ -122,6 +122,26 @@ impl Push2 {
         Ok(())
     }
 
+    /// Sends a standard Control Change (CC) message to a specific 1-indexed MIDI channel (1-16).
+    pub fn send_cc(&mut self, channel: u8, cc: u8, value: u8) -> Result<(), Push2Error> {
+        // Clamp channel to 1-16, then convert to 0-15 for the MIDI status byte
+        let ch_index = channel.clamp(1, 16) - 1;
+        
+        // 0xB0 (176) is the base Control Change status. Adding the channel index targets the right channel.
+        let status = CONTROL_CHANGE | ch_index;
+        
+        self.midi_out.send(&[status, cc, value])?;
+        Ok(())
+    }
+
+    /// Sends a CC message for a specific encoder on a specific 1-indexed MIDI channel (1-16).
+    pub fn send_encoder_cc(&mut self, channel: u8, name: EncoderName, value: u8) -> Result<(), Push2Error> {
+        if let Some(cc) = self.button_map.get_encoder_address(name) {
+            self.send_cc(channel, cc, value)?;
+        }
+        Ok(())
+    }
+
     pub fn draw_bmp_to_display(&mut self, bmp_data: &[u8], position: Point) -> Result<(), Push2Error> {
         self.display.draw_bmp(bmp_data, position)?;
         Ok(())
