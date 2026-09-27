@@ -76,20 +76,32 @@ impl MidiHandler {
 
     /// Finds the configured input port, or falls back to manual selection.
 
-    fn select_input_port(
+fn select_input_port(
         midi_in: &MidiInput,
         config_port_name: &str,
     ) -> Result<MidiInputPort, MidiHandlerError> {
         let in_ports = midi_in.ports();
-        // Try to find port from config
+        
+        // 1. Try to find exact port from config
         for port in &in_ports {
-            if midi_in.port_name(port)? == config_port_name {
-                info!("Found configured input port: {}", config_port_name);
+            let name = midi_in.port_name(port)?;
+            if name == config_port_name {
+                info!("Found configured input port: {}", name);
                 return Ok(port.clone());
             }
         }
 
-        // Configured port not found, fall back to old logic
+        // 2. Try partial match using the config string (handles OS port suffixes like ' 28:0')
+        for port in &in_ports {
+            let name = midi_in.port_name(port)?;
+            // Bidirectional check: if the OS name contains the config name, or vice versa
+            if name.contains(config_port_name) || config_port_name.contains(&name) {
+                info!("Auto-detected input port via config substring: {}", name);
+                return Ok(port.clone());
+            }
+        }
+
+        // Configured port not found, fall back to manual logic
         warn!(
             "Configured input port '{}' not found. Falling back to manual selection.",
             config_port_name
@@ -122,22 +134,31 @@ impl MidiHandler {
         }
     }
 
-    /// Finds the configured output port, or falls back to manual selection.
-
     fn select_output_port(
         midi_out: &MidiOutput,
         config_port_name: &str,
     ) -> Result<MidiOutputPort, MidiHandlerError> {
         let out_ports = midi_out.ports();
-        // Try to find output port from config
+        
+        // 1. Try to find exact port from config
         for port in &out_ports {
-            if midi_out.port_name(port)? == config_port_name {
-                info!("Found configured output port: {}", config_port_name);
+            let name = midi_out.port_name(port)?;
+            if name == config_port_name {
+                info!("Found configured output port: {}", name);
                 return Ok(port.clone());
             }
         }
 
-        // Configured port not found, fall back to old logic
+        // 2. Try partial match using the config string
+        for port in &out_ports {
+            let name = midi_out.port_name(port)?;
+            if name.contains(config_port_name) || config_port_name.contains(&name) {
+                info!("Auto-detected output port via config substring: {}", name);
+                return Ok(port.clone());
+            }
+        }
+
+        // Configured port not found, fall back to manual logic
         warn!(
             "Configured output port '{}' not found. Falling back to manual selection.",
             config_port_name
