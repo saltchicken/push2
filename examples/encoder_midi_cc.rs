@@ -55,11 +55,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                     encoder_values.insert(name, new_value);
                     needs_redraw = true;
 
-                    // Send the CC message cleanly on Channel 2
-                    if let Err(e) = push2.send_encoder_cc(2, name, new_value as u8) {
+                    // 1. Define your custom CC routing
+                    let custom_cc = match name {
+                        EncoderName::Track1 => 20, // Custom CC 20 for Track 1
+                        EncoderName::Track2 => 21, // Custom CC 21 for Track 2
+                        // Fall back to the hardware default CC for any unmapped encoders
+                        _ => push2.button_map.get_encoder_address(name).unwrap_or(0),
+                    };
+
+                    // 2. Send the message using `send_cc` instead of `send_encoder_cc`
+                    if let Err(e) = push2.send_cc(2, custom_cc, new_value as u8) {
                         log::error!("Failed to send MIDI: {}", e);
                     } else {
-                        info!("Sent CC: Channel=2, Encoder={:?}, Value={}", name, new_value);
+                        info!("Sent CC: Channel=2, CC={}, Value={}", custom_cc, new_value);
                     }
                 }
             }
