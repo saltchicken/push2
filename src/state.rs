@@ -1,29 +1,44 @@
-use crate::ControlName;
+use crate::{ControlName, PushColor};
 use std::collections::HashMap;
+
 /// Holds the state of a single 8x8 grid pad
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct PadState {
     /// The last recorded velocity (0 = released)
     pub velocity: u8,
-    /// The currently set color (0 = off)
-    pub color: u8,
+    /// The currently set color
+    pub color: PushColor,
 }
+
+impl Default for PadState {
+    fn default() -> Self {
+        Self { velocity: 0, color: crate::colors::BLACK }
+    }
+}
+
 /// Holds the state of a single control button
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct ButtonState {
     /// The last recorded velocity (0 = released)
     pub velocity: u8,
-    /// The currently set brightness/color (0 = off)
-    pub light: u8,
+    /// The currently set brightness/color
+    pub light: PushColor,
 }
+
+impl Default for ButtonState {
+    fn default() -> Self {
+        Self { velocity: 0, light: crate::colors::BLACK }
+    }
+}
+
 #[derive(Debug)]
 pub struct Push2State {
     pub pads: [[PadState; 8]; 8],
     pub buttons: HashMap<ControlName, ButtonState>,
     pub slider: u16,
 }
+
 impl Push2State {
-    /// Creates a new, default state.
     pub fn new() -> Self {
         Self {
             pads: [[PadState::default(); 8]; 8],
@@ -31,8 +46,7 @@ impl Push2State {
             slider: 0,
         }
     }
-    /// Updates the state based on an incoming event.
-    /// This only updates the *input* state (velocity, pressed, etc.).
+
     pub fn update_from_event(&mut self, event: &crate::Push2Event) {
         match event {
             crate::Push2Event::PadPressed { coord, velocity } => {
@@ -58,6 +72,7 @@ impl Push2State {
         }
     }
 }
+
 impl Default for Push2State {
     fn default() -> Self {
         Self::new()

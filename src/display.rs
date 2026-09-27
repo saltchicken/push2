@@ -4,26 +4,27 @@ use embedded_graphics_core::{
     pixelcolor::{Bgr565, IntoStorage},
     prelude::*,
 };
-
 use rusb::{Context, Device, DeviceDescriptor, DeviceHandle, UsbContext};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 use thiserror::Error;
 
 pub struct Push2Display {
-    pub(crate) handle: DeviceHandle<Context>,
     pub(crate) frame_buffer: Box<[u16]>,
-    transfer_buffer: Vec<u8>,
+    tx_frame: mpsc::SyncSender<Box<[u16]>>,
 }
 
 #[derive(Error, Debug)]
 pub enum Push2DisplayError {
     #[error("Ableton Push2 Not found")]
     Push2NotFound,
-
     #[error(transparent)]
     USBError(#[from] rusb::Error),
-
     #[error("Failed to parse BMP image")]
     BmpParseError,
+    #[error("USB transfer thread has disconnected")]
+    TransferThreadDisconnected,
 }
 
 pub const DISPLAY_WIDTH: usize = 960;
@@ -34,55 +35,81 @@ const BYTES_PER_LINE: usize = 2048; // 960 * 2 + 128 filler
 const PUSH_2_VENDOR_ID: u16 = 0x2982;
 const PUSH_2_PRODUCT_ID: u16 = 0x1967;
 
+/// Frame header required by the Push 2 to signify the start of a new frame transfer.
 const HEADER: [u8; 16] = [
     0xff, 0xcc, 0xaa, 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
+
+/// XOR Mask applied to frame buffer pixels to prevent the display controller 
+/// from accidentally interpreting raw pixel data as a USB control command.
 const MASK: [u8; 4] = [0xe7, 0xf3, 0xe7, 0xff];
 
 impl Push2Display {
-    /// Open the Push2 display. and init the frame buffer with black.
-    /// the frame buffer is not send send until you call `flush`
+    /// Opens the Push2 display and starts the background USB transfer thread.
     pub fn new() -> Result<Push2Display, Push2DisplayError> {
         let mut context = Context::new()?;
         let (_, _, handle) = open_device(&mut context, PUSH_2_VENDOR_ID, PUSH_2_PRODUCT_ID)
             .ok_or(Push2DisplayError::Push2NotFound)?;
 
         handle.claim_interface(0)?;
-        let buffer: Box<[u16]> = vec![0; DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice();
-        let transfer_buffer = vec![0u8; BYTES_PER_LINE * DISPLAY_HEIGHT];
+
+        let (tx_frame, rx_frame) = mpsc::sync_channel::<Box<[u16]>>(2);
+
+        // Spawn a background thread to handle USB I/O.
+        // It acts as a keep-alive loop: the Push 2 screen blanks if it doesn't receive data for ~2s.
+        thread::spawn(move || {
+            let mut transfer_buffer = vec![0u8; BYTES_PER_LINE * DISPLAY_HEIGHT];
+            let usb_timeout = Duration::from_millis(500);
+            let frame_interval = Duration::from_millis(16); // ~60 FPS
+            let mut has_frame = false;
+
+            loop {
+                // Wait for a new frame, but timeout if the app is idle
+                match rx_frame.recv_timeout(frame_interval) {
+                    Ok(frame) => {
+                        has_frame = true;
+                        for r in 0..DISPLAY_HEIGHT {
+                            for c in 0..DISPLAY_WIDTH {
+                                let i = r * DISPLAY_WIDTH + c;
+                                let b: [u8; 2] = u16::to_le_bytes(frame[i]);
+                                let di = r * BYTES_PER_LINE + c * 2;
+
+                                transfer_buffer[di] = b[0] ^ MASK[di % 4];
+                                transfer_buffer[di + 1] = b[1] ^ MASK[(di + 1) % 4];
+                            }
+                        }
+                    }
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        // App is idle (no new flush). We just fall through and resend the existing buffer
+                    }
+                    Err(mpsc::RecvTimeoutError::Disconnected) => {
+                        // The main app shut down
+                        break;
+                    }
+                }
+
+                if has_frame {
+                    // Write the frame header followed by the masked frame data
+                    let _ = handle.write_bulk(PUSH2_BULK_EP_OUT, &HEADER, usb_timeout);
+                    let _ = handle.write_bulk(PUSH2_BULK_EP_OUT, &transfer_buffer, usb_timeout);
+                }
+            }
+        });
+
+        let frame_buffer = vec![0; DISPLAY_WIDTH * DISPLAY_HEIGHT].into_boxed_slice();
 
         Ok(Push2Display {
-            handle,
-            frame_buffer: buffer,
-            transfer_buffer,
+            frame_buffer,
+            tx_frame,
         })
     }
 
-    /// Writes the frame buffer to the display. If no frame arrives in 2 seconds, the display is turned black
+    /// Sends the current frame buffer to the USB transfer thread.
     pub fn flush(&mut self) -> Result<(), Push2DisplayError> {
-        use std::time::Duration;
-        let timeout = Duration::from_secs(1);
-        self.update_transfer_buffer();
-
-        self.handle
-            .write_bulk(PUSH2_BULK_EP_OUT, &HEADER, timeout)?;
-        self.handle
-            .write_bulk(PUSH2_BULK_EP_OUT, &self.transfer_buffer, timeout)?;
-
+        self.tx_frame
+            .send(self.frame_buffer.clone())
+            .map_err(|_| Push2DisplayError::TransferThreadDisconnected)?;
         Ok(())
-    }
-
-    fn update_transfer_buffer(&mut self) {
-        for r in 0..DISPLAY_HEIGHT {
-            for c in 0..DISPLAY_WIDTH {
-                let i = r * DISPLAY_WIDTH + c;
-                let b: [u8; 2] = u16::to_le_bytes(self.frame_buffer[i]);
-                let di = r * BYTES_PER_LINE + c * 2;
-
-                self.transfer_buffer[di] = b[0] ^ MASK[di % 4];
-                self.transfer_buffer[di + 1] = b[1] ^ MASK[(di + 1) % 4];
-            }
-        }
     }
 }
 
@@ -100,7 +127,6 @@ impl DrawTarget for Push2Display {
                 self.frame_buffer[index as usize] = color.into_storage();
             }
         }
-
         Ok(())
     }
 }
@@ -116,24 +142,15 @@ fn open_device<T: UsbContext>(
     vid: u16,
     pid: u16,
 ) -> Option<(Device<T>, DeviceDescriptor, DeviceHandle<T>)> {
-    let devices = match context.devices() {
-        Ok(d) => d,
-        Err(_) => return None,
-    };
-
+    let devices = context.devices().ok()?;
     for device in devices.iter() {
-        let device_desc = match device.device_descriptor() {
-            Ok(d) => d,
-            Err(_) => continue,
-        };
-
-        if device_desc.vendor_id() == vid && device_desc.product_id() == pid {
-            match device.open() {
-                Ok(handle) => return Some((device, device_desc, handle)),
-                Err(_) => continue,
+        if let Ok(device_desc) = device.device_descriptor() {
+            if device_desc.vendor_id() == vid && device_desc.product_id() == pid {
+                if let Ok(handle) = device.open() {
+                    return Some((device, device_desc, handle));
+                }
             }
         }
     }
-
     None
 }

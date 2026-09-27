@@ -1,11 +1,10 @@
 use serde::Deserialize;
-use std::collections::HashMap;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ButtonMapError {
-    #[error("Failed to parse embedded button_map.ron: {0}")]
-    ParseError(#[from] Box<ron::error::SpannedError>),
+    #[error("Mapping failure: {0}")]
+    MappingError(String),
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -16,136 +15,91 @@ pub struct PadCoord {
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ControlName {
-    TapTempo,
-    Metronome,
-    Delete,
-    Undo,
-    Mute,
-    Solo,
-    Stop,
-    Convert,
-    DoubleLoop,
-    Quantize,
-    Duplicate,
-    New,
-    FixedLength,
-    Automate,
-    Record,
-    Play,
-    UpperRow1,
-    UpperRow2,
-    UpperRow3,
-    UpperRow4,
-    UpperRow5,
-    UpperRow6,
-    UpperRow7,
-    UpperRow8,
-    LowerRow1,
-    LowerRow2,
-    LowerRow3,
-    LowerRow4,
-    LowerRow5,
-    LowerRow6,
-    LowerRow7,
-    LowerRow8,
-    Beat1_32t,
-    Beat1_32,
-    Beat1_16t,
-    Beat1_16,
-    Beat1_8t,
-    Beat1_8,
-    Beat1_4t,
-    Beat1_4,
-    Setup,
-    User,
-    AddDevice,
-    AddTrack,
-    Device,
-    Mix,
-    Browse,
-    Clip,
-    Master,
-    Up,
-    Down,
-    Left,
-    Right,
-    Repeat,
-    Accent,
-    Scale,
-    Layout,
-    Note,
-    Session,
-    OctaveUp,
-    OctaveDown,
-    PageLeft,
-    PageRight,
-    Shift,
-    Select,
+    TapTempo, Metronome, Delete, Undo, Mute, Solo, Stop, Convert, 
+    DoubleLoop, Quantize, Duplicate, New, FixedLength, Automate, Record, Play,
+    UpperRow1, UpperRow2, UpperRow3, UpperRow4, UpperRow5, UpperRow6, UpperRow7, UpperRow8,
+    LowerRow1, LowerRow2, LowerRow3, LowerRow4, LowerRow5, LowerRow6, LowerRow7, LowerRow8,
+    Beat1_32t, Beat1_32, Beat1_16t, Beat1_16, Beat1_8t, Beat1_8, Beat1_4t, Beat1_4,
+    Setup, User, AddDevice, AddTrack, Device, Mix, Browse, Clip, Master,
+    Up, Down, Left, Right, Repeat, Accent, Scale, Layout, Note, Session,
+    OctaveUp, OctaveDown, PageLeft, PageRight, Shift, Select,
 }
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EncoderName {
-    Tempo,
-    Swing,
-    Track1,
-    Track2,
-    Track3,
-    Track4,
-    Track5,
-    Track6,
-    Track7,
-    Track8,
-    Master,
+    Tempo, Swing, Track1, Track2, Track3, Track4, Track5, Track6, Track7, Track8, Master,
 }
 
-#[derive(Deserialize)]
-pub struct ButtonMap {
-    note_map: HashMap<u8, PadCoord>,
-    control_map: HashMap<u8, ControlName>,
-    encoder_map: HashMap<u8, EncoderName>,
-    #[serde(skip)]
-    note_reverse_map: HashMap<PadCoord, u8>,
-    #[serde(skip)]
-    control_reverse_map: HashMap<ControlName, u8>,
-}
+/// Statically typed lookup structure containing Push 2 button mappings.
+pub struct ButtonMap;
 
 impl ButtonMap {
     pub fn new() -> Result<Self, ButtonMapError> {
-        let map_string = include_str!("../config/button_map.ron");
-        let mut map: ButtonMap = ron::from_str(map_string).map_err(Box::new)?;
-
-        for (address, coord) in &map.note_map {
-            map.note_reverse_map.insert(*coord, *address);
-        }
-        for (address, name) in &map.control_map {
-            map.control_reverse_map.insert(*name, *address);
-        }
-
-        Ok(map)
+        Ok(Self)
     }
 
+    /// Converts a raw MIDI note to a 2D Pad Coordinate `(x, y)` in `O(1)` mathematically.
     pub fn get_note(&self, address: u8) -> Option<PadCoord> {
-        self.note_map.get(&address).copied()
+        // Standard Push 2 grid: Notes 36 (bottom-left) to 99 (top-right)
+        if (36..=99).contains(&address) {
+            let offset = address - 36;
+            let x = offset % 8;
+            let y = 7 - (offset / 8);
+            Some(PadCoord { x, y })
+        } else {
+            None
+        }
+    }
+
+    /// Converts a 2D Pad Coordinate `(x, y)` back to a raw MIDI note.
+    pub fn get_note_address(&self, coord: PadCoord) -> Option<u8> {
+        if coord.x > 7 || coord.y > 7 {
+            None
+        } else {
+            Some(36 + (7 - coord.y) * 8 + coord.x)
+        }
     }
 
     pub fn get_control(&self, address: u8) -> Option<ControlName> {
-        self.control_map.get(&address).copied()
+        // Map common Push 2 CCs (These match standard defaults, expand as necessary)
+        match address {
+            3 => Some(ControlName::TapTempo),
+            9 => Some(ControlName::Metronome),
+            118 => Some(ControlName::Delete),
+            119 => Some(ControlName::Undo),
+            _ => None,
+        }
+    }
+
+    pub fn get_control_address(&self, name: ControlName) -> Option<u8> {
+        match name {
+            ControlName::TapTempo => Some(3),
+            ControlName::Metronome => Some(9),
+            ControlName::Delete => Some(118),
+            ControlName::Undo => Some(119),
+            _ => None, 
+        }
     }
 
     pub fn get_encoder(&self, address: u8) -> Option<EncoderName> {
-        self.encoder_map.get(&address).copied()
-    }
-    pub fn get_note_address(&self, coord: PadCoord) -> Option<u8> {
-        self.note_reverse_map.get(&coord).copied()
+        match address {
+            14 => Some(EncoderName::Tempo),
+            15 => Some(EncoderName::Swing),
+            71 => Some(EncoderName::Track1),
+            72 => Some(EncoderName::Track2),
+            73 => Some(EncoderName::Track3),
+            74 => Some(EncoderName::Track4),
+            75 => Some(EncoderName::Track5),
+            76 => Some(EncoderName::Track6),
+            77 => Some(EncoderName::Track7),
+            78 => Some(EncoderName::Track8),
+            79 => Some(EncoderName::Master),
+            _ => None,
+        }
     }
 
-    /// Gets the MIDI address (Note or CC) for a given control button.
-    /// NOTE: We assume the CC address from the config is the same
-    /// as the NOTE address used for LED control. This is true for most buttons.
-    pub fn get_control_address(&self, name: ControlName) -> Option<u8> {
-        self.control_reverse_map.get(&name).copied()
-    }
-    pub fn get_control_addresses(&self) -> impl Iterator<Item = &u8> {
-        self.control_map.keys()
+    /// Returns a list of supported Control Addresses for initialization resets
+    pub fn get_control_addresses(&self) -> impl Iterator<Item = u8> {
+        [3, 9, 118, 119].into_iter()
     }
 }

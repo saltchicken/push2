@@ -1,7 +1,7 @@
-use push2::{Push2, Push2Colors, Push2Event};
+use push2::{AppConfig, Push2, Push2Colors, Push2Event, PushColor};
 
 use embedded_graphics::{
-    mono_font::{MonoTextStyle, ascii::FONT_10X20},
+    mono_font::{ascii::FONT_10X20, MonoTextStyle},
     pixelcolor::Bgr565,
     prelude::*,
     primitives::{PrimitiveStyle, Rectangle},
@@ -10,58 +10,38 @@ use embedded_graphics::{
 use log::{debug, info, trace};
 use std::{error, thread, time};
 
-const PAD_COLOR_ON: u8 = Push2Colors::GREEN_PALE;
-const BUTTON_LIGHT_ON: u8 = Push2Colors::GREEN_PALE;
+const PAD_COLOR_ON: PushColor = Push2Colors::GREEN_PALE;
+const BUTTON_LIGHT_ON: PushColor = Push2Colors::GREEN_PALE;
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     env_logger::init();
-    // --- Config Loading ---
+    
+    let mut push2 = Push2::new(AppConfig::load_or_default()?)?;
 
-    let mut push2 = Push2::new()?;
-
-    // --- Display Setup (Application Logic) ---
     let text_style = MonoTextStyle::new(&FONT_10X20, Bgr565::WHITE);
     let mut position = Point::new(0, 70);
     let mut step = 4;
 
     info!("\nConnection open. Press any pad...");
 
-    // --- Main Loop ---
     loop {
         while let Some(event) = push2.poll_event() {
-            debug!("Received event: {:?}", event);
-
             match event {
                 Push2Event::PadPressed { coord, .. } => {
-                    debug!("--- Pad ({}, {}) PRESSED ---", coord.x, coord.y);
                     push2.set_pad_color(coord, PAD_COLOR_ON)?;
                 }
                 Push2Event::PadReleased { coord } => {
-                    debug!("--- Pad ({}, {}) RELEASED ---", coord.x, coord.y);
-                    push2.set_pad_color(coord, 0)?;
+                    push2.set_pad_color(coord, PushColor(0))?;
                 }
                 Push2Event::ButtonPressed { name, .. } => {
-                    debug!("--- Button {:?} PRESSED ---", name);
                     push2.set_button_light(name, BUTTON_LIGHT_ON)?;
                 }
                 Push2Event::ButtonReleased { name } => {
-                    debug!("--- Button {:?} RELEASED ---", name);
-                    push2.set_button_light(name, 0)?;
+                    push2.set_button_light(name, PushColor(0))?;
                 }
-                Push2Event::EncoderTwisted { name, raw_delta } => {
-                    trace!(
-                        "--- Encoder {:?} TWISTED, raw value {} ---",
-                        name, raw_delta
-                    );
-                    debug!("    New tracked value for {:?}: {}", name, raw_delta);
-                }
-                Push2Event::SliderMoved { value } => {
-                    debug!("--- Slider MOVED, value {} ---", value);
-                }
+                _ => {}
             }
         }
-
-        // --- Original Display Logic (Application-specific) ---
 
         push2.display.clear(Bgr565::BLACK)?;
         Rectangle::new(Point::zero(), push2.display.size())
@@ -79,4 +59,3 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         thread::sleep(time::Duration::from_millis(1000 / 60));
     }
 }
-

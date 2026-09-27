@@ -1,161 +1,164 @@
-//TODO: Fix the color mapping
 #![allow(dead_code)]
 
-pub const BLACK: u8 = 0;
-pub const PINK: u8 = 1;
-pub const RED: u8 = 2;
-pub const ORANGE: u8 = 3;
+/// Strongly typed color for Ableton Push 2 pads and buttons.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct PushColor(pub u8);
 
-pub const ORANGE2: u8 = 4;
-pub const BROWN_PALE: u8 = 5;
-pub const BROWN: u8 = 6;
-pub const YELLOW_PALE: u8 = 7;
+pub const BLACK: PushColor = PushColor(0);
+pub const PINK: PushColor = PushColor(1);
+pub const RED: PushColor = PushColor(2);
+pub const ORANGE: PushColor = PushColor(3);
 
-pub const YELLOW: u8 = 8;
-pub const GREEN_LIME: u8 = 9;
-pub const GREEN_LIGHT: u8 = 10;
-pub const GREEN: u8 = 11;
+pub const ORANGE2: PushColor = PushColor(4);
+pub const BROWN_PALE: PushColor = PushColor(5);
+pub const BROWN: PushColor = PushColor(6);
+pub const YELLOW_PALE: PushColor = PushColor(7);
 
-pub const GREEN_TURTLE: u8 = 12;
-pub const GREEN_PALE: u8 = 13;
-pub const TURQUOISE_PALE: u8 = 14;
-pub const TURQUOISE: u8 = 15;
+pub const YELLOW: PushColor = PushColor(8);
+pub const GREEN_LIME: PushColor = PushColor(9);
+pub const GREEN_LIGHT: PushColor = PushColor(10);
+pub const GREEN: PushColor = PushColor(11);
 
-pub const BLUE_SKY: u8 = 16;
-pub const PURPLE_PALE: u8 = 17;
-pub const PURPLE_BLUE: u8 = 18;
-pub const PURPLE: u8 = 19;
+pub const GREEN_TURTLE: PushColor = PushColor(12);
+pub const GREEN_PALE: PushColor = PushColor(13);
+pub const TURQUOISE_PALE: PushColor = PushColor(14);
+pub const TURQUOISE: PushColor = PushColor(15);
 
-pub const BLUE_SKY_DARK: u8 = 20;
-pub const YELLOW_AMBER_BRIGHT: u8 = 21;
-pub const YELLOW_LOW: u8 = 22;
-pub const YELLOW2: u8 = 23;
+pub const BLUE_SKY: PushColor = PushColor(16);
+pub const PURPLE_PALE: PushColor = PushColor(17);
+pub const PURPLE_BLUE: PushColor = PushColor(18);
+pub const PURPLE: PushColor = PushColor(19);
 
-pub const YELLOW_BRIGHT: u8 = 24;
-pub const YELLOW_LIME_LOW: u8 = 25;
-pub const YELLOW_LIME: u8 = 26;
-pub const YELLOW_LIME_BRIGHT: u8 = 27;
+pub const BLUE_SKY_DARK: PushColor = PushColor(20);
+pub const YELLOW_AMBER_BRIGHT: PushColor = PushColor(21);
+pub const YELLOW_LOW: PushColor = PushColor(22);
+pub const YELLOW2: PushColor = PushColor(23);
 
-pub const LIME_YELLOW_LOW: u8 = 28;
-pub const LIME_YELLOW: u8 = 29;
-pub const LIME_YELLOW_BRIGHT: u8 = 30;
-pub const LIME_LOW: u8 = 31;
+pub const YELLOW_BRIGHT: PushColor = PushColor(24);
+pub const YELLOW_LIME_LOW: PushColor = PushColor(25);
+pub const YELLOW_LIME: PushColor = PushColor(26);
+pub const YELLOW_LIME_BRIGHT: PushColor = PushColor(27);
 
-pub const LIME: u8 = 32;
-pub const LIME_BRIGHT: u8 = 33;
-pub const LIME_GREEN_LOW: u8 = 34;
-pub const LIME_GREEN: u8 = 35;
+pub const LIME_YELLOW_LOW: PushColor = PushColor(28);
+pub const LIME_YELLOW: PushColor = PushColor(29);
+pub const LIME_YELLOW_BRIGHT: PushColor = PushColor(30);
+pub const LIME_LOW: PushColor = PushColor(31);
 
-pub const LIME_GREEN_BRIGHT: u8 = 36;
-pub const GREEN_LIME_LOW: u8 = 37;
-pub const GREEN_LIME2: u8 = 38;
-pub const GREEN_LIME_BRIGHT: u8 = 39;
+pub const LIME: PushColor = PushColor(32);
+pub const LIME_BRIGHT: PushColor = PushColor(33);
+pub const LIME_GREEN_LOW: PushColor = PushColor(34);
+pub const LIME_GREEN: PushColor = PushColor(35);
 
-pub const GREEN_LOW: u8 = 40;
-pub const GREEN2: u8 = 41;
-pub const GREEN_BRIGHT: u8 = 42;
-pub const GREEN_SPRING_LOW: u8 = 43;
+pub const LIME_GREEN_BRIGHT: PushColor = PushColor(36);
+pub const GREEN_LIME_LOW: PushColor = PushColor(37);
+pub const GREEN_LIME2: PushColor = PushColor(38);
+pub const GREEN_LIME_BRIGHT: PushColor = PushColor(39);
 
-pub const GREEN_SPRING: u8 = 44;
-pub const GREEN_SPRING_BRIGHT: u8 = 45;
-pub const SPRING_GREEN_LOW: u8 = 46;
-pub const SPRING_GREEN: u8 = 47;
+pub const GREEN_LOW: PushColor = PushColor(40);
+pub const GREEN2: PushColor = PushColor(41);
+pub const GREEN_BRIGHT: PushColor = PushColor(42);
+pub const GREEN_SPRING_LOW: PushColor = PushColor(43);
 
-pub const SPRING_GREEN_BRIGHT: u8 = 48;
-pub const SPRING_LOW: u8 = 49;
-pub const SPRING: u8 = 50;
-pub const SPRING_BRIGHT: u8 = 51;
+pub const GREEN_SPRING: PushColor = PushColor(44);
+pub const GREEN_SPRING_BRIGHT: PushColor = PushColor(45);
+pub const SPRING_GREEN_LOW: PushColor = PushColor(46);
+pub const SPRING_GREEN: PushColor = PushColor(47);
 
-pub const SPRING_CYAN_LOW: u8 = 52;
-pub const SPRING_CYAN: u8 = 53;
-pub const SPRING_CYAN_BRIGHT: u8 = 54;
-pub const CYAN_SPRING_LOW: u8 = 55;
+pub const SPRING_GREEN_BRIGHT: PushColor = PushColor(48);
+pub const SPRING_LOW: PushColor = PushColor(49);
+pub const SPRING: PushColor = PushColor(50);
+pub const SPRING_BRIGHT: PushColor = PushColor(51);
 
-pub const CYAN_SPRING: u8 = 56;
-pub const CYAN_SPRING_BRIGHT: u8 = 57;
-pub const CYAN_LOW: u8 = 58;
-pub const CYAN: u8 = 59;
+pub const SPRING_CYAN_LOW: PushColor = PushColor(52);
+pub const SPRING_CYAN: PushColor = PushColor(53);
+pub const SPRING_CYAN_BRIGHT: PushColor = PushColor(54);
+pub const CYAN_SPRING_LOW: PushColor = PushColor(55);
 
-pub const CYAN_BRIGHT: u8 = 60;
-pub const CYAN_AZURE_LOW: u8 = 61;
-pub const CYAN_AZURE: u8 = 62;
-pub const CYAN_AZURE_BRIGHT: u8 = 63;
+pub const CYAN_SPRING: PushColor = PushColor(56);
+pub const CYAN_SPRING_BRIGHT: PushColor = PushColor(57);
+pub const CYAN_LOW: PushColor = PushColor(58);
+pub const CYAN: PushColor = PushColor(59);
 
-pub const AZURE_CYAN_LOW: u8 = 64;
-pub const AZURE_CYAN: u8 = 65;
-pub const AZURE_CYAN_BRIGHT: u8 = 66;
-pub const AZURE_LOW: u8 = 67;
+pub const CYAN_BRIGHT: PushColor = PushColor(60);
+pub const CYAN_AZURE_LOW: PushColor = PushColor(61);
+pub const CYAN_AZURE: PushColor = PushColor(62);
+pub const CYAN_AZURE_BRIGHT: PushColor = PushColor(63);
 
-pub const AZURE: u8 = 68;
-pub const AZURE_BRIGHT: u8 = 69;
-pub const AZURE_BLUE_LOW: u8 = 70;
-pub const AZURE_BLUE: u8 = 71;
+pub const AZURE_CYAN_LOW: PushColor = PushColor(64);
+pub const AZURE_CYAN: PushColor = PushColor(65);
+pub const AZURE_CYAN_BRIGHT: PushColor = PushColor(66);
+pub const AZURE_LOW: PushColor = PushColor(67);
 
-pub const AZURE_BLUE_BRIGHT: u8 = 72;
-pub const BLUE_AZURE_LOW: u8 = 73;
-pub const BLUE_AZURE: u8 = 74;
-pub const BLUE_AZURE_BRIGHT: u8 = 75;
+pub const AZURE: PushColor = PushColor(68);
+pub const AZURE_BRIGHT: PushColor = PushColor(69);
+pub const AZURE_BLUE_LOW: PushColor = PushColor(70);
+pub const AZURE_BLUE: PushColor = PushColor(71);
 
-pub const BLUE_LOW: u8 = 76;
-pub const BLUE: u8 = 77;
-pub const BLUE_BRIGHT: u8 = 78;
-pub const BLUE_VIOLET_LOW: u8 = 79;
+pub const AZURE_BLUE_BRIGHT: PushColor = PushColor(72);
+pub const BLUE_AZURE_LOW: PushColor = PushColor(73);
+pub const BLUE_AZURE: PushColor = PushColor(74);
+pub const BLUE_AZURE_BRIGHT: PushColor = PushColor(75);
 
-pub const BLUE_VIOLET: u8 = 80;
-pub const BLUE_VIOLET_BRIGHT: u8 = 81;
-pub const VIOLET_BLUE_LOW: u8 = 82;
-pub const VIOLET_BLUE: u8 = 83;
+pub const BLUE_LOW: PushColor = PushColor(76);
+pub const BLUE: PushColor = PushColor(77);
+pub const BLUE_BRIGHT: PushColor = PushColor(78);
+pub const BLUE_VIOLET_LOW: PushColor = PushColor(79);
 
-pub const VIOLET_BLUE_BRIGHT: u8 = 84;
-pub const VIOLET_LOW: u8 = 85;
-pub const VIOLET: u8 = 86;
-pub const VIOLET_BRIGHT: u8 = 87;
+pub const BLUE_VIOLET: PushColor = PushColor(80);
+pub const BLUE_VIOLET_BRIGHT: PushColor = PushColor(81);
+pub const VIOLET_BLUE_LOW: PushColor = PushColor(82);
+pub const VIOLET_BLUE: PushColor = PushColor(83);
 
-pub const VIOLET_MAGENTA_LOW: u8 = 88;
-pub const VIOLET_MAGENTA: u8 = 89;
-pub const VIOLET_MAGENTA_BRIGHT: u8 = 90;
-pub const MAGENTA_VIOLET_LOW: u8 = 91;
+pub const VIOLET_BLUE_BRIGHT: PushColor = PushColor(84);
+pub const VIOLET_LOW: PushColor = PushColor(85);
+pub const VIOLET: PushColor = PushColor(86);
+pub const VIOLET_BRIGHT: PushColor = PushColor(87);
 
-pub const MAGENTA_VIOLET: u8 = 92;
-pub const MAGENTA_VIOLET_BRIGHT: u8 = 93;
-pub const MAGENTA_LOW: u8 = 94;
-pub const MAGENTA: u8 = 95;
+pub const VIOLET_MAGENTA_LOW: PushColor = PushColor(88);
+pub const VIOLET_MAGENTA: PushColor = PushColor(89);
+pub const VIOLET_MAGENTA_BRIGHT: PushColor = PushColor(90);
+pub const MAGENTA_VIOLET_LOW: PushColor = PushColor(91);
 
-pub const MAGENTA_BRIGHT: u8 = 96;
-pub const MAGENTA_PINK_LOW: u8 = 97;
-pub const MAGENTA_PINK: u8 = 98;
-pub const MAGENTA_PINK_BRIGHT: u8 = 99;
+pub const MAGENTA_VIOLET: PushColor = PushColor(92);
+pub const MAGENTA_VIOLET_BRIGHT: PushColor = PushColor(93);
+pub const MAGENTA_LOW: PushColor = PushColor(94);
+pub const MAGENTA: PushColor = PushColor(95);
 
-pub const PINK_MAGENTA_LOW: u8 = 100;
-pub const PINK_MAGENTA: u8 = 101;
-pub const PINK_MAGENTA_BRIGHT: u8 = 102;
-pub const PINK_LOW: u8 = 103;
+pub const MAGENTA_BRIGHT: PushColor = PushColor(96);
+pub const MAGENTA_PINK_LOW: PushColor = PushColor(97);
+pub const MAGENTA_PINK: PushColor = PushColor(98);
+pub const MAGENTA_PINK_BRIGHT: PushColor = PushColor(99);
 
-pub const PINK2: u8 = 104;
-pub const PINK_BRIGHT: u8 = 105;
-pub const PINK_RED_LOW: u8 = 106;
-pub const PINK_RED: u8 = 107;
+pub const PINK_MAGENTA_LOW: PushColor = PushColor(100);
+pub const PINK_MAGENTA: PushColor = PushColor(101);
+pub const PINK_MAGENTA_BRIGHT: PushColor = PushColor(102);
+pub const PINK_LOW: PushColor = PushColor(103);
 
-pub const PINK_RED_BRIGHT: u8 = 108;
-pub const RED_PINK_LOW: u8 = 109;
-pub const RED_PINK: u8 = 110;
-pub const RED_PINK_BRIGHT: u8 = 111;
+pub const PINK2: PushColor = PushColor(104);
+pub const PINK_BRIGHT: PushColor = PushColor(105);
+pub const PINK_RED_LOW: PushColor = PushColor(106);
+pub const PINK_RED: PushColor = PushColor(107);
 
-pub const RED_LOW: u8 = 112;
-pub const RED2: u8 = 113;
-pub const RED_BRIGHT: u8 = 114;
-pub const WARM_WHITE_LOW: u8 = 115;
+pub const PINK_RED_BRIGHT: PushColor = PushColor(108);
+pub const RED_PINK_LOW: PushColor = PushColor(109);
+pub const RED_PINK: PushColor = PushColor(110);
+pub const RED_PINK_BRIGHT: PushColor = PushColor(111);
 
-pub const WARM_WHITE: u8 = 116;
-pub const WARM_WHITE_BRIGHT: u8 = 117;
-pub const WHITE_LOW: u8 = 118;
-pub const WHITE_BRIGHT: u8 = 119;
+pub const RED_LOW: PushColor = PushColor(112);
+pub const RED2: PushColor = PushColor(113);
+pub const RED_BRIGHT: PushColor = PushColor(114);
+pub const WARM_WHITE_LOW: PushColor = PushColor(115);
 
-pub const ORANGE_LOW: u8 = 120;
-pub const ORANGE3: u8 = 121;
-pub const ORANGE_BRIGHT: u8 = 122;
-pub const YELLOW_PALE2: u8 = 123;
-pub const LIME_PALE: u8 = 124;
-pub const GREEN_PALE2: u8 = 125;
-pub const CYAN_PALE: u8 = 126;
-pub const BLUE_PALE: u8 = 127;
+pub const WARM_WHITE: PushColor = PushColor(116);
+pub const WARM_WHITE_BRIGHT: PushColor = PushColor(117);
+pub const WHITE_LOW: PushColor = PushColor(118);
+pub const WHITE_BRIGHT: PushColor = PushColor(119);
+
+pub const ORANGE_LOW: PushColor = PushColor(120);
+pub const ORANGE3: PushColor = PushColor(121);
+pub const ORANGE_BRIGHT: PushColor = PushColor(122);
+pub const YELLOW_PALE2: PushColor = PushColor(123);
+pub const LIME_PALE: PushColor = PushColor(124);
+pub const GREEN_PALE2: PushColor = PushColor(125);
+pub const CYAN_PALE: PushColor = PushColor(126);
+pub const BLUE_PALE: PushColor = PushColor(127);
